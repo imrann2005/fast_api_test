@@ -23,5 +23,13 @@ def log_data():
        
         return jsonify({"error": "Invalid request"}), 400
 
+
+@app.route('/process-query', methods=['POST'])
+def process_query():
+    data = request.json
+    print("Webhook received:", data)
+    return jsonify({"status": "ok"})
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(port=5000)
+
