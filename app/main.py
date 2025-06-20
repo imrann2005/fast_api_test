@@ -28,7 +28,7 @@ def log_data():
 def process_query():
     data = request.json
     print("Webhook received:", data)
-    return jsonify({"status": "ok"})
+    return jsonify({"status": "ok","data":data}),200
 
 if __name__ == '__main__':
     app.run(port=5000)
