@@ -1,66 +1,53 @@
 from flask import Flask, request, jsonify
 import os
+import json
 from datetime import datetime
-import logging
 
 app = Flask(__name__)
 
-# Create a logs directory if it doesn't exist
-os.makedirs("logs", exist_ok=True)
+# Constants
+DATA_DIR = "data"
+DATA_FILE = os.path.join(DATA_DIR, "requests.jsonl")
 
-# Configure logging to file
-logging.basicConfig(
-    filename="logs/api_requests.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
-@app.route('/log', methods=['POST'])
-def log_data():
-    try:
-        data = request.get_json()
-
-        email = data.get('email')
-        query = data.get('query')
-
-        log_message = f"Received data: user_id={email}, query={query}"
-
-        # Log to console (visible in Render)
-        print(log_message, flush=True)
-
-        # Also log to file
-        logging.info(log_message)
-
-        return jsonify({"status": "logged", "received": data}), 200
-
-    except Exception as e:
-        logging.error(f"Error in /log: {str(e)}")
-        return jsonify({"error": "Invalid request"}), 400
+# Ensure data directory exists
+os.makedirs(DATA_DIR, exist_ok=True)
 
 @app.route('/process-query', methods=['POST'])
-def process_query():
-    data = request.json
-    logging.info(f"Data from /process-query: {data}")
-    return jsonify({"status": "ok", "data": data}), 200
+def save_data():
+    try:
+        data = request.get_json()
+     
 
-@app.route('/view-log', methods=['GET'])
-def view_log():
-    log_file = "logs/api_requests.log"
+        timestamp = datetime.now().isoformat()
+        entry = {
+            "timestamp": timestamp,
+            "data" : data
+        }
 
-    if not os.path.exists(log_file):
-        return jsonify({"error": "Log file does not exist"}), 404
+        # Save to file as JSONL
+        with open(DATA_FILE, "a") as f:
+            f.write(json.dumps(entry) + "\n")
 
-    with open(log_file, "r") as file:
-        content = file.read()
+        return jsonify({"status": "saved", "entry": entry}), 200
 
-    return jsonify({"log": content}), 200
+    except Exception as e:
+        return jsonify({"error": "Invalid request", "details": str(e)}), 400
 
-# Optional: log every request method and path
-@app.before_request
-def log_all_requests():
-    print(f"[{datetime.now()}] 🔄 {request.method} {request.path}", flush=True)
+@app.route('/view-data', methods=['GET'])
+def view_data():
+    if not os.path.exists(DATA_FILE):
+        return jsonify({"error": "No data file found"}), 404
+
+    entries = []
+    with open(DATA_FILE, "r") as f:
+        for line in f:
+            try:
+                entries.append(json.loads(line.strip()))
+            except json.JSONDecodeError:
+                continue
+
+    return jsonify({"count": len(entries), "entries": entries}), 200
 
 if __name__ == '__main__':
-    # Use dynamic port binding for Render compatibility
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
