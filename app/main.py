@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify
+
+
 import logging
 
 app = Flask(__name__)
@@ -27,7 +29,7 @@ def log_data():
 @app.route('/process-query', methods=['POST'])
 def process_query():
     data = request.json
-    print("Webhook received:", data,flush=True)
+    logging.info(f"Data : {data}")
     return jsonify({"status": "ok","data":data}),200
 
 if __name__ == '__main__':
