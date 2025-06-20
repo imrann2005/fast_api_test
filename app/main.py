@@ -27,7 +27,7 @@ def log_data():
 @app.route('/process-query', methods=['POST'])
 def process_query():
     data = request.json
-    print("Webhook received:", data)
+    print("Webhook received:", data,flush=True)
     return jsonify({"status": "ok","data":data}),200
 
 if __name__ == '__main__':
